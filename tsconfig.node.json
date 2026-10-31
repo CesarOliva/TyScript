@@ -6,5 +6,5 @@
     "jsx": "react-jsx",
     "noEmit": false
   },
-  "include": ["src/Analyzer/lexer.ts", "src/Analyzer/parser.ts", "src/Analyzer/ast.ts", "src/Analyzer/symbolTable.ts", "src/Analyzer/semanticAnalyzer.ts", "src/Analyzer/tests.ts"]
+  "include": ["src/Analyzer/lexer.ts", "src/Analyzer/parser.ts", "src/Analyzer/ast.ts", "src/Analyzer/symbolTable.ts", "src/Analyzer/semanticAnalyzer.ts", "src/Analyzer/tests.ts", "src/Analyzer/compiler.ts", "src/Analyzer/examples.ts", "src/Backend/*.ts"]
 }
