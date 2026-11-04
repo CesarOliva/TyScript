@@ -66,7 +66,7 @@ export class QuadGenerator {
     }
 
     newLabel(): Operand {
-        return { kind: "label", name:`L${this.labelCount}`};
+        return { kind: "label", name:`L${this.labelCount++}`};
     }
 
     emit(op: QuadOp, arg1?: Operand, arg2?: Operand, result?: Operand, line?: number): Quad {

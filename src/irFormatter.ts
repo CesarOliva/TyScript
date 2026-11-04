@@ -16,7 +16,7 @@ function jumpToText(quad: Quad): string {
     const target = OperandToText(quad.arg1);
 
     if (quad.op === "label") {
-        return `${OperandToText(quad.result)}`;
+        return `${OperandToText(quad.result)}:`;
     }
     if (quad.op === "goto") {
         return `goto ${target}`

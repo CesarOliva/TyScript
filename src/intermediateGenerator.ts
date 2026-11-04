@@ -266,9 +266,9 @@ export class IntermediateGenerator {
         if (!isValueMethod) {
             const arg = node.args[0] ? this.genExpression(node.args[0]) : undefined;
             this.gen.emit(node.method as never, object, arg, undefined);
+        } else {
+            this.gen.emit(node.method as never, object, undefined, result);
         }
-
-        this.gen.emit(node.method as never, object, undefined, result);
 
         return result;
     }
