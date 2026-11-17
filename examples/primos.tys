@@ -1,0 +1,23 @@
+program Primos {
+    int limite = 30;
+    int numero = 2;
+
+    while (numero <= limite) {
+        bool esPrimo = true;
+        int divisor = 2;
+
+        while (divisor < numero) {
+            if (numero % divisor == 0) {
+                esPrimo = false;
+            }
+
+            divisor = divisor + 1;
+        }
+
+        if (esPrimo) {
+            print(numero);
+        }
+
+        numero = numero + 1;
+    }
+}

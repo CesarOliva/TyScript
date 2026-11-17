@@ -1,0 +1,10 @@
+program CuentaRegresiva {
+    int n = 3;
+
+    do {
+        print(n);
+        n = n - 1;
+    } while (n > 0);
+
+    print("Fin");
+}

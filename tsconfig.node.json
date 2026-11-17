@@ -1,10 +1,14 @@
 {
-  "extends": "./tsconfig.json",
   "compilerOptions": {
+    "target": "ES2020",
     "module": "CommonJS",
     "moduleResolution": "Node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
     "jsx": "react-jsx",
-    "noEmit": false
+    "types": ["node"],
+    "noEmit": true
   },
-  "include": ["src/Analyzer/lexer.ts", "src/Analyzer/parser.ts", "src/Analyzer/ast.ts", "src/Analyzer/symbolTable.ts", "src/Analyzer/semanticAnalyzer.ts", "src/Analyzer/tests.ts", "src/Analyzer/compiler.ts", "src/Analyzer/examples.ts", "src/Backend/*.ts"]
+  "include": ["src/compile.ts", "src/compiler.ts", "src/ast.ts", "src/lexer.ts", "src/parser.ts", "src/semanticAnalyzer.ts", "src/symbolTable.ts", "src/intermediateGenerator.ts", "src/ir.ts", "src/irFormatter.ts", "src/optimizer.ts", "src/flowGraph.ts", "src/javascriptGenerator.ts", "src/tests.ts"]
 }

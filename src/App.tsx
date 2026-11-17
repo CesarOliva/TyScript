@@ -1,8 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { compileSource } from './Analyzer/compiler';
+import { compileSource as compileForEditor } from './Analyzer/compiler';
 import { CompilerStepEngine } from './Analyzer/compilerStepEngine';
 import { codeExamples, codeExamplesLabels } from './Analyzer/examples';
+import { compileSource } from './compiler';
+import { IntermediateGenerator } from './intermediateGenerator';
+import { optimize } from './optimizer';
+import { createCompilerRuntime, generateJavaScript } from './javascriptGenerator';
 import CodeEditor from './components/CodeEditor';
+import TerminalPanel from './components/TerminalPanel';
 import StepDebugger, { phaseLabel } from './components/StepDebugger';
 import Tabs, { type TabId } from './components/Tabs';
 import { badgeClass, type BadgeVariant, buttonClass } from './components/styles';
@@ -11,14 +16,20 @@ const AUTOPLAY_MS = 1200;
 
 export default function App() {
   const [source, setSource] = useState<string>(codeExamples.valido);
+  const [fileName, setFileName] = useState('main.tys');
+  const [terminalLines, setTerminalLines] = useState<string[]>([]);
+  const [waitingForInput, setWaitingForInput] = useState(false);
   const [tab, setTab] = useState<TabId>('tokens');
   const [stepMode, setStepMode] = useState(false);
   const [stepLine, setStepLine] = useState<number | null>(null);
   const [stepIndex, setStepIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
   const stepTimer = useRef<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const pendingInputs = useRef<string[]>([]);
+  const shownOutputCount = useRef(0);
 
-  const result = useMemo(() => compileSource(source), [source]);
+  const result = useMemo(() => compileForEditor(source), [source]);
 
   // Motor paso a paso (100% client-side, se reconstruye al cambiar el fuente).
   const stepEngine = useMemo(() => new CompilerStepEngine(source), [source]);
@@ -59,6 +70,80 @@ export default function App() {
   const togglePlay = () => {
     if (stepIndex >= stepSteps.length - 1 && !playing) setStepIndex(0);
     setPlaying((p) => !p);
+  };
+
+  const execute = (inputs: string[], alreadyShown: number) => {
+    const compilation = compileSource(source);
+    if (!compilation.ok || !compilation.ast) {
+      setWaitingForInput(false);
+      setTerminalLines(compilation.errors.map((error) => {
+        const location = error.line ? `Línea ${error.line}${error.column ? `:${error.column}` : ''}: ` : '';
+        return `[${error.phase}] ${location}${error.message}`;
+      }));
+      return;
+    }
+
+    const runtime = createCompilerRuntime();
+    runtime.setSilent(true);
+    runtime.setInput(inputs);
+    try {
+      const quads = new IntermediateGenerator().generate(compilation.ast);
+      const optimized = optimize(quads);
+      const generated = generateJavaScript(optimized.optimizedQuads, { programName: fileName });
+      new Function('CompilerRuntime', generated.body)(runtime);
+
+      const newOutput = runtime.output.slice(alreadyShown).map(String);
+      shownOutputCount.current = runtime.output.length;
+      setTerminalLines((current) => [...current, ...newOutput, '✓ Ejecución finalizada.']);
+      setWaitingForInput(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const newOutput = runtime.output.slice(alreadyShown).map(String);
+      shownOutputCount.current = runtime.output.length;
+      if (newOutput.length > 0) setTerminalLines((current) => [...current, ...newOutput]);
+
+      if (message.includes('no hay entrada disponible para read()')) {
+        setWaitingForInput(true);
+      } else {
+        setTerminalLines((current) => [...current, `Error de ejecución: ${message}`]);
+        setWaitingForInput(false);
+      }
+    }
+  };
+
+  const runProgram = () => {
+    pendingInputs.current = [];
+    shownOutputCount.current = 0;
+    setTerminalLines([`$ Ejecutando ${fileName}`]);
+    setWaitingForInput(false);
+    execute([], 0);
+  };
+
+  const submitProgramInput = (value: string) => {
+    pendingInputs.current.push(value);
+    setTerminalLines((current) => [...current, `read> ${value}`]);
+    setWaitingForInput(false);
+    execute(pendingInputs.current, shownOutputCount.current);
+  };
+
+  const openFile = async (file?: File) => {
+    if (!file) return;
+    try {
+      setSource(await file.text());
+      setFileName(file.name.toLowerCase().endsWith('.tys') ? file.name : `${file.name}.tys`);
+    } catch (error) {
+      setTerminalLines([`No se pudo abrir el archivo: ${error instanceof Error ? error.message : String(error)}`]);
+    }
+  };
+
+  const saveFile = () => {
+    const blob = new Blob([source], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName.toLowerCase().endsWith('.tys') ? fileName : `${fileName}.tys`;
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const status: { label: string; variant: BadgeVariant } = !source.trim()
@@ -130,18 +215,34 @@ export default function App() {
               </div>
             </div>
           )}
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".tys,text/plain"
+              className="hidden"
+              onChange={(event) => {
+                void openFile(event.currentTarget.files?.[0]);
+                event.currentTarget.value = '';
+              }}
+            />
+            <button className={buttonClass(false)} onClick={() => fileInputRef.current?.click()}>Abrir .tys</button>
+            <button className={buttonClass(false)} onClick={saveFile}>Guardar .tys</button>
+            <button className={buttonClass(true)} onClick={runProgram}>▶ Ejecutar</button>
+            <span className="ml-auto self-center font-mono text-xs text-[#5b6b84]">{fileName}</span>
+          </div>
           <CodeEditor
             value={source}
             onChange={setSource}
             highlightedLine={stepMode ? stepLine : null}
             placeholder={'program Main {\n  print("Hola");\n}'}
-            fileName={
-              source === codeExamples.valido ? 'valido.tys' : 
-              source === codeExamples.errores ? 'errores.tys' : 
-              source === codeExamples.scope ? 'scope.tys' : 
-              source === codeExamples.arrays ? 'arrays.tys' : 
-              source === codeExamples.stack ? 'stack.tys' : 
-              'main.tys'}
+            fileName={fileName}
+          />
+          <TerminalPanel
+            lines={terminalLines}
+            waitingForInput={waitingForInput}
+            onSubmit={submitProgramInput}
+            onClear={() => setTerminalLines([])}
           />
         </section>
 
