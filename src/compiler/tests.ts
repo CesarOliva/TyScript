@@ -1,6 +1,6 @@
-import { Lexer } from './lexer';
-import { Parser } from './parser';
-import { SemanticAnalyzer } from './semanticAnalyzer';
+import { Lexer } from '../Analyzer/lexer';
+import { Parser } from '../Analyzer/parser';
+import { SemanticAnalyzer } from '../Analyzer/semanticAnalyzer';
 import { IntermediateGenerator } from './intermediateGenerator';
 import { findBrokenJumps } from './ir';
 import { formatQuads, quadTable } from './irFormatter';

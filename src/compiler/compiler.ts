@@ -1,7 +1,7 @@
-import type { ProgramNode } from "./ast";
-import { Lexer, TokenType, type Token } from "./lexer";
-import { Parser } from "./parser";
-import { SemanticAnalyzer } from "./semanticAnalyzer";
+import type { ProgramNode } from "../Analyzer/ast";
+import { Lexer, TokenType, type Token } from "../Analyzer/lexer";
+import { Parser } from "../Analyzer/parser";
+import { SemanticAnalyzer } from "../Analyzer/semanticAnalyzer";
 
 export type CompilePhase = "lexico" | "sintactico" | "semantico";
 

@@ -2,10 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { compileSource as compileForEditor } from './Analyzer/compiler';
 import { CompilerStepEngine } from './Analyzer/compilerStepEngine';
 import { codeExamples, codeExamplesLabels } from './Analyzer/examples';
-import { compileSource } from './compiler';
-import { IntermediateGenerator } from './intermediateGenerator';
-import { optimize } from './optimizer';
-import { createCompilerRuntime, generateJavaScript } from './javascriptGenerator';
+import { compileSource } from './compiler/compiler';
+import { IntermediateGenerator } from './compiler/intermediateGenerator';
+import { optimize } from './compiler/optimizer';
+import { createCompilerRuntime, generateJavaScript } from './compiler/javascriptGenerator';
 import CodeEditor from './components/CodeEditor';
 import TerminalPanel from './components/TerminalPanel';
 import StepDebugger, { phaseLabel } from './components/StepDebugger';
@@ -19,6 +19,7 @@ export default function App() {
   const [fileName, setFileName] = useState('main.tys');
   const [terminalLines, setTerminalLines] = useState<string[]>([]);
   const [waitingForInput, setWaitingForInput] = useState(false);
+  const [hasRun, setHasRun] = useState(false);
   const [tab, setTab] = useState<TabId>('tokens');
   const [stepMode, setStepMode] = useState(false);
   const [stepLine, setStepLine] = useState<number | null>(null);
@@ -112,6 +113,7 @@ export default function App() {
   };
 
   const runProgram = () => {
+    setHasRun(true);
     pendingInputs.current = [];
     shownOutputCount.current = 0;
     setTerminalLines([`$ Ejecutando ${fileName}`]);
@@ -215,35 +217,38 @@ export default function App() {
               </div>
             </div>
           )}
-          <div className="flex shrink-0 flex-wrap gap-2">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".tys,text/plain"
-              className="hidden"
-              onChange={(event) => {
-                void openFile(event.currentTarget.files?.[0]);
-                event.currentTarget.value = '';
-              }}
-            />
-            <button className={buttonClass(false)} onClick={() => fileInputRef.current?.click()}>Abrir .tys</button>
-            <button className={buttonClass(false)} onClick={saveFile}>Guardar .tys</button>
-            <button className={buttonClass(true)} onClick={runProgram}>▶ Ejecutar</button>
-            <span className="ml-auto self-center font-mono text-xs text-[#5b6b84]">{fileName}</span>
-          </div>
           <CodeEditor
             value={source}
             onChange={setSource}
             highlightedLine={stepMode ? stepLine : null}
             placeholder={'program Main {\n  print("Hola");\n}'}
             fileName={fileName}
+            toolbar={
+              <>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".tys,text/plain"
+                  className="hidden"
+                  onChange={(event) => {
+                    void openFile(event.currentTarget.files?.[0]);
+                    event.currentTarget.value = '';
+                  }}
+                />
+                <button className="rounded border border-[#2c3a52] px-2 py-1 text-[11px] text-[#aeb9ca] hover:bg-[#223052] hover:text-white" onClick={() => fileInputRef.current?.click()}>Abrir</button>
+                <button className="rounded border border-[#2c3a52] px-2 py-1 text-[11px] text-[#aeb9ca] hover:bg-[#223052] hover:text-white" onClick={saveFile}>Guardar</button>
+                <button className="rounded border border-blue-500/60 bg-blue-600 px-2 py-1 text-[11px] text-white hover:bg-blue-500" onClick={runProgram}>Ejecutar</button>
+              </>
+            }
           />
-          <TerminalPanel
-            lines={terminalLines}
-            waitingForInput={waitingForInput}
-            onSubmit={submitProgramInput}
-            onClear={() => setTerminalLines([])}
-          />
+          {hasRun && (
+            <TerminalPanel
+              lines={terminalLines}
+              waitingForInput={waitingForInput}
+              onSubmit={submitProgramInput}
+              onClear={() => setTerminalLines([])}
+            />
+          )}
         </section>
 
         {stepMode ? (

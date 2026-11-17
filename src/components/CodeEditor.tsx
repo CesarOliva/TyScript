@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 
 interface CodeEditorProps {
     value: string;
@@ -6,6 +7,7 @@ interface CodeEditorProps {
     placeholder?: string;
     fileName?: string;
     highlightedLine?: number | null;
+    toolbar?: ReactNode;
 }
 
 const LINE_HEIGHT = 20;
@@ -17,6 +19,7 @@ export default function CodeEditor({
     placeholder = '',
     fileName = 'main.tys',
     highlightedLine = null,
+    toolbar,
 }: CodeEditorProps) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [caret, setCaret] = useState({ line: 1, col: 1 });
@@ -71,7 +74,7 @@ export default function CodeEditor({
                         {fileName}
                     </span>
                 </div>
-                <span className="font-mono text-[11px] text-[#5b6b84]">TyScript</span>
+                <div className="flex items-center gap-1.5">{toolbar}</div>
             </div>
 
             <div className="flex min-h-0 flex-1">

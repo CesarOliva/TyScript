@@ -10,5 +10,5 @@
     "types": ["node"],
     "noEmit": true
   },
-  "include": ["src/compile.ts", "src/compiler.ts", "src/ast.ts", "src/lexer.ts", "src/parser.ts", "src/semanticAnalyzer.ts", "src/symbolTable.ts", "src/intermediateGenerator.ts", "src/ir.ts", "src/irFormatter.ts", "src/optimizer.ts", "src/flowGraph.ts", "src/javascriptGenerator.ts", "src/tests.ts"]
+  "include": ["src/compiler/**/*.ts", "src/Analyzer/ast.ts", "src/Analyzer/lexer.ts", "src/Analyzer/parser.ts", "src/Analyzer/semanticAnalyzer.ts", "src/Analyzer/symbolTable.ts"]
 }

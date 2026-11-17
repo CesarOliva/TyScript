@@ -16,5 +16,5 @@
     "types": ["vite/client"]
   },
   "include": ["src"],
-  "exclude": ["src/compile.ts", "src/tests.ts", "src/Analyzer/tests.ts"]
+  "exclude": ["src/compiler/compile.ts", "src/compiler/tests.ts", "src/Analyzer/tests.ts"]
 }

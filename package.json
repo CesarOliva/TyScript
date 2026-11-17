@@ -3,13 +3,13 @@
   "homepage": "https://cesaroliva.github.io/TyScript",
   "version": "1.0.0",
   "description": "Compilador TyScript y playground web",
-  "main": "src/tests.ts",
+  "main": "src/compiler/tests.ts",
   "scripts": {
-    "test": "ts-node -P tsconfig.node.json src/tests.ts",
+    "test": "ts-node -P tsconfig.node.json src/compiler/tests.ts",
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "compile": "ts-node -P tsconfig.node.json src/compile.ts",
+    "compile": "ts-node -P tsconfig.node.json src/compiler/compile.ts",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist"
   },

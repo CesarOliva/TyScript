@@ -138,7 +138,7 @@ Run the console test harness:
 npm test
 ```
 
-`src/tests.ts` exercises every phase:
+`src/compiler/tests.ts` exercises every phase:
 
 - **Lexer / parser / semantic analyzer**: valid program, accumulated semantic errors, and out-of-scope variable errors.
 - **Intermediate code**: quads for `for`, `while`, `do-while`, nested `if/else`, stacks, queues, arrays, logic and `read`; verifies that every jump target exists.

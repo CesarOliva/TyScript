@@ -18,7 +18,7 @@ import {
     MethodCallNode,
     ArrayLiteralNode,
     IndexAccessNode
-} from "./ast";
+} from "../Analyzer/ast";
 import { Operand, Quad, QuadGenerator, VALUE_METHODS } from "./ir";
 
 export class IntermediateGenerator {
