@@ -1,0 +1,19 @@
+program Lectura {
+    int a;
+    int b;
+
+    print("Ingresa el primer numero:");
+    read(a);
+
+    print("Ingresa el segundo numero:");
+    read(b);
+
+    print("Suma:");
+    print(a + b);
+
+    print("Producto:");
+    print(a * b);
+
+    print("Promedio entero:");
+    print((a + b) / 2);
+}

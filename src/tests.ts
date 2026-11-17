@@ -462,12 +462,27 @@ function runJavaScriptTest(testName: string, source: string, expected: unknown[]
   console.log("\n");
 }
 
+const arreglosActualizadosCode = `
+program ArreglosActualizados {
+  int[] numeros = [1, 2, 3];
+  int i = 0;
+  while (i < 3) {
+    numeros[i] = numeros[i] + 1;
+    i = i + 1;
+  }
+  print(numeros[0]);
+  print(numeros[1]);
+  print(numeros[2]);
+}
+`;
+
 runJavaScriptTest("JS Factorial (for)", factorialCode, [120]);
 runJavaScriptTest("JS Fibonacci (while)", fibonacciCode, [21]);
 runJavaScriptTest("JS CuentaRegresiva (do-while)", doWhileCode, [3, 2, 1, "Fin"]);
 runJavaScriptTest("JS if/else anidados", ifElseCode, ["Par mayor a 5"]);
 runJavaScriptTest("JS stack y queue", estructurasCode, [2, 2, "a", "a", 1, false]);
 runJavaScriptTest("JS arreglos e índices", arreglosCode, [100, 30, 20]);
+runJavaScriptTest("JS escritura indexada calculada", arreglosActualizadosCode, [2, 3, 4]);
 runJavaScriptTest("JS operadores lógicos y unarios", logicocode, ["OK and", -4]);
 runJavaScriptTest("JS read con entrada simulada", readCode, ["Mayor de edad"], [20]);
 runJavaScriptTest("JS plegado de constantes", plegadoCode, [14]);

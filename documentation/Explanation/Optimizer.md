@@ -50,10 +50,12 @@ Este módulo implementa la **Fase 2 del plan** (`documentation/5-Compilador.md`)
    canónico. Cada escritura a un nombre limpia las claves que lo mencionan (defensa
    conservadora contra invalidaciones).
 5. **`dead-temporales` (código muerto)** — repite hasta estabilizar: cuenta los usos de
-   cada `var`/`temp` como operando y elimina cuádruples cuyo `result` es un **temporal sin
-   usos**, pero solo operaciones puras (`:=`, binarias, `!`, `neg`, `idx_load`,
-   `new_array`). Las operaciones con efectos (`pop`, `dequeue`, `push`, `read`, `print`)
-   jamás se eliminan, aunque su temporal no se use.
+   cada `var`/`temp` como operando (`arg1`/`arg2` y también el `result` de `idx_store`,
+   porque ahí el `result` es el **valor almacenado**, no una definición) y elimina
+   cuádruples cuyo `result` es un **temporal sin usos**, pero solo operaciones puras
+   (`:=`, binarias, `!`, `neg`, `idx_load`, `new_array`). Las operaciones con efectos
+   (`pop`, `dequeue`, `push`, `read`, `print`) jamás se eliminan, aunque su temporal no
+   se use.
 6. **`etiquetas-huerfanas`** — elimina cuádruples `label` cuyo nombre no aparece como
    destino en ningún `goto` (destino en `arg1`) ni `if_false` (destino en `arg2`).
 7. **`bloques-inalcanzables`** — construye el grafo, hace BFS desde el bloque 0 y conserva

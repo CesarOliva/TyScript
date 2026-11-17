@@ -1,0 +1,26 @@
+program Triangle {
+    int a;
+    int b;
+    int c;
+
+    print("Escribe el valor del primer lado del triángulo: ");
+    read(a);
+    print("Escribe el valor del segundo lado del triángulo: ");
+    read(b);
+    print("Escribe el valor del tercer lado del triángulo: ");
+    read(c);
+
+    if (a + b > c && a + c > b && b + c > a) {
+        print("El triángulo es válido.");
+    } else {
+        print("El triángulo no es válido.");
+    }
+
+    if (a == b && b == c) {
+        print("El triángulo es equilátero.");
+    } else if (a == b || a == c || b == c) {
+        print("El triángulo es isósceles.");
+    } else {
+        print("El triángulo es escaleno.");
+    }
+}

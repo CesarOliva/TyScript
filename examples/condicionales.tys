@@ -1,0 +1,22 @@
+program Condicionales {
+    int nota = 85;
+
+    if (nota >= 90) {
+        print("Excelente");
+    } else if (nota >= 70) {
+        print("Aprobado");
+    } else {
+        print("Reprobado");
+    }
+
+    bool asistencia = true;
+    bool tareas = false;
+
+    if (asistencia && !tareas) {
+        print("Cumple asistencia, pero debe tareas");
+    }
+
+    if (asistencia || tareas) {
+        print("Tiene al menos un requisito");
+    }
+}

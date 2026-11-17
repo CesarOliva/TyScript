@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from "fs";
+import { mkdirSync, readFileSync, readSync, writeFileSync } from "fs";
 import { compileSource, type CompileDiagnostic } from "./compiler";
 import { IntermediateGenerator } from "./intermediateGenerator";
 import { optimize } from "./optimizer";
@@ -19,7 +19,7 @@ interface CliOptions {
 
 const HELP_TEXT = `Uso: npm run compile -- <archivo.tys> [opciones]
 
-Compila un programa TyScript a JavaScript y lo ejecuta.
+Compila un programa TyScript a JavaScript, lo ejecuta y muestra su salida.
 
 Opciones:
   --ir         Muestra los cuádruples intermedios.
@@ -98,6 +98,72 @@ function preloadStdin(runtime: ReturnType<typeof createCompilerRuntime>): void {
     } catch {
         // Sin entrada disponible: read() reportará el error si se usa.
     }
+}
+
+function createInteractiveReader(): () => string | undefined {
+    const pending: number[] = [];
+    const chunk = Buffer.alloc(256);
+    let ended = false;
+    let failed = false;
+    let fallbackTried = false;
+
+    const shiftLine = (): string | undefined => {
+        const newline = pending.indexOf(10);
+        if (newline < 0) return undefined;
+
+        const bytes = pending.splice(0, newline + 1);
+        bytes.pop();
+        if (bytes.length > 0 && bytes[bytes.length - 1] === 13) bytes.pop();
+
+        return Buffer.from(bytes).toString("utf8");
+    };
+
+    const takeRemainder = (): string | undefined => {
+        if (pending.length === 0) return undefined;
+
+        const bytes = pending.splice(0, pending.length);
+        if (bytes.length > 0 && bytes[bytes.length - 1] === 13) bytes.pop();
+
+        return Buffer.from(bytes).toString("utf8");
+    };
+
+    return () => {
+        if (failed) return undefined;
+
+        while (true) {
+            const line = shiftLine();
+            if (line !== undefined) return line;
+            if (ended) return takeRemainder();
+
+            try {
+                const bytes = readSync(0, chunk, 0, chunk.length, null);
+
+                if (bytes === 0) {
+                    ended = true;
+                    continue;
+                }
+
+                for (let i = 0; i < bytes; i++) pending.push(chunk[i]);
+            } catch {
+                if (fallbackTried) {
+                    failed = true;
+                    return undefined;
+                }
+
+                fallbackTried = true;
+                console.log("Introduce los valores para read() (uno por línea). Termina con Ctrl+Z y Enter (Windows) o Ctrl+D (Unix):");
+
+                try {
+                    const rest = readFileSync(0);
+                    for (let i = 0; i < rest.length; i++) pending.push(rest[i]);
+                    ended = true;
+                } catch {
+                    failed = true;
+                    return undefined;
+                }
+            }
+        }
+    };
 }
 
 function printPassSummary(optimized: ReturnType<typeof optimize>): void {
@@ -194,21 +260,20 @@ export function runCli(argv: string[]): number {
         return 1;
     }
 
-    console.log(`\n✅ Programa objeto generado (${object.structured ? "flujo estructurado" : "máquina de estados"}):`);
-    console.log(`   ${paths.js}`);
-    console.log(`   ${paths.ir}`);
-
-    if (options.outOnly) return 0;
-
-    console.log("\n=== Programa objeto ===");
-    console.log(object.code);
-
-    console.log("=== Ejecución ===");
+    if (options.outOnly) {
+        console.log(`\n✅ Programa objeto generado (${object.structured ? "flujo estructurado" : "máquina de estados"}):`);
+        console.log(`   ${paths.js}`);
+        console.log(`   ${paths.ir}`);
+        return 0;
+    }
 
     try {
         const runtime = createCompilerRuntime();
 
-        if (originalQuads.some((quad) => quad.op === "read")) preloadStdin(runtime);
+        if (originalQuads.some((quad) => quad.op === "read")) {
+            preloadStdin(runtime);
+            if (process.stdin.isTTY) runtime.setReader(createInteractiveReader());
+        }
 
         new Function("CompilerRuntime", object.body)(runtime);
     } catch (error) {

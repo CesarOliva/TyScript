@@ -321,6 +321,15 @@ function removeDeadTemporalAssignments(quads: Quad[]): number {
                     uses.set(operand.name, (uses.get(operand.name) ?? 0) + 1);
                 }
             }
+
+            // En idx_store el valor almacenado viaja en `result`, así que es una lectura.
+            if (
+                quad.op === "idx_store" &&
+                quad.result &&
+                (quad.result.kind === "var" || quad.result.kind === "temp")
+            ) {
+                uses.set(quad.result.name, (uses.get(quad.result.name) ?? 0) + 1);
+            }
         }
 
         const removableOps = new Set<QuadOp>([...BINARY_OPS, "!", "neg", ":=", "idx_load", "new_array"]);

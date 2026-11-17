@@ -43,7 +43,13 @@ El preámbulo define un objeto con estado privado por instancia:
 * **`output`**: arreglo donde se acumula todo lo impreso. Es la vía de verificación de los tests (los `print` se comparan contra la salida esperada).
 * **`print(value)`**: agrega a `output` y, salvo que el runtime esté silenciado, hace `console.log(value)`. Así el runner muestra la salida y los tests pueden capturarla.
 * **`setSilent(bool)` / `reset()`**: control de consola y limpieza de salida/entrada.
-* **`read()`**: consume el siguiente valor de la entrada configurada con `setInput([...])`, convirtiendo `"true"`/`"false"` y cadenas numéricas a sus tipos reales. Si no hay entrada disponible, lanza un error explicativo. La lectura real desde `stdin` queda a cargo del runner de la Fase 4, que puede precargar líneas con `setInput`.
+* **`read()`**: consume el siguiente valor de la entrada. El orden de resolución es:
+  1. valores precargados con `setInput([...])` (tests, tuberías o el runner);
+  2. lector personalizado registrado con `setReader(fn)`;
+  3. lectura síncrona de `stdin` cuando el proceso es interactivo (TTY), línea por línea;
+  4. lectura completa de `stdin` cuando hay una tubería o archivo redirigido (el programa objeto autónomo también funciona con `echo ... | node out/Programa.js`).
+  
+  Los valores `"true"`/`"false"` y las cadenas numéricas se convierten a sus tipos reales. Si no hay entrada disponible, lanza un error explicativo. La lectura real desde `stdin` queda a cargo del runner de la Fase 4, que puede precargar líneas con `setInput` o dejar que el runtime las pida interactivamente.
 * **`newStack()` / `newQueue()` / `newArray()`**: constructores de valores del lenguaje.
 
 Las estructuras respetan la semántica validada por el análisis semántico:

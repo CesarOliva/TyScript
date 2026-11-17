@@ -1,0 +1,28 @@
+program Estructuras {
+    stack<int> pila;
+    queue<string> cola;
+
+    pila.push(10);
+    pila.push(20);
+    pila.push(30);
+
+    print("Tope de la pila:");
+    print(pila.peek());
+
+    print("Elementos de la pila:");
+    while (!pila.isEmpty()) {
+        print(pila.pop());
+    }
+
+    cola.enqueue("Ana");
+    cola.enqueue("Luis");
+    cola.enqueue("Marta");
+
+    print("Frente de la cola:");
+    print(cola.front());
+
+    print("Elementos de la cola:");
+    while (cola.size() > 0) {
+        print(cola.dequeue());
+    }
+}

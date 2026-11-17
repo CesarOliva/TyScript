@@ -32,10 +32,10 @@ npm run compile -- --help
 |---|---|
 | `--ir` | Imprime los cuádruples intermedios con `formatQuads()`. |
 | `--opt` | Imprime el resumen de pases aplicados y los cuádruples optimizados. |
-| `--out` | Solo escribe los archivos de `out/`; no imprime ni ejecuta el objeto. |
+| `--out` | Solo escribe los archivos de `out/`, muestra sus rutas y no ejecuta. |
 | `-h`, `--help` | Muestra la ayuda y termina con código 0. |
 
-Sin `--out`, el comportamiento por defecto es **escribir el objeto, imprimir su código y ejecutarlo**. Las banderas son combinables: `--ir --opt --out` genera toda la traza de inspección sin ejecutar.
+Sin `--out`, el comportamiento por defecto es **escribir el objeto en silencio y ejecutarlo mostrando únicamente la salida del programa** (los `print`). Las banderas son combinables: `--ir --opt` añade la traza de inspección antes del resultado. Si se quiere ocultar también el banner que imprime `npm`, puede usarse `npm run --silent compile -- ...`.
 
 ### 2. Parseo de argumentos
 
@@ -89,6 +89,8 @@ Con el AST válido:
 
    El nombre del archivo se sanitiza (por ejemplo, caracteres no alfanuméricos se reemplazan por `_`). `out/` está en `.gitignore` porque es salida generada.
 
+Los archivos se escriben siempre (también en una ejecución normal), pero las rutas solo se muestran con `--out`; así una ejecución normal no imprime información adicional.
+
 Cualquier fallo de generación o escritura se captura y se reporta con código 1.
 
 ### 5. Visualización opcional
@@ -109,12 +111,12 @@ Cualquier fallo de generación o escritura se captura y se reporta con código 1
 
 Sin `--out`, la CLI:
 
-1. Imprime el programa objeto completo.
+1. No imprime el código del programa objeto: lo escribe en `out/` y pasa directamente a la ejecución. Solo se ven los `print` del programa.
 2. Crea un runtime **nuevo** con `createCompilerRuntime()`.
-3. Si el IR contiene algún cuádruple `read`, intenta precargar la entrada estándar:
-   * si `stdin` es una TTY, no bloquea;
-   * si hay una tubería (`echo 20 | npm run compile -- programa.tys`), lee todo con `readFileSync(0, "utf8")`, separa por líneas y llama a `runtime.setInput(lines)`;
-   * si no hay entrada, el runtime lanzará un error claro solo cuando el programa ejecute `read`.
+3. Si el IR contiene algún cuádruple `read`, prepara la entrada:
+   * **tubería / archivo** (`echo 21 | npm run compile -- programa.tys`): se lee toda la entrada con `readFileSync(0, "utf8")`, se separa por líneas y se entrega con `runtime.setInput(lines)`;
+   * **terminal interactiva (TTY)**: no se precarga nada para no bloquear; el runtime pide cada valor **línea por línea** cuando el programa ejecuta `read()`, leyendo de `stdin` de forma síncrona. Si el sistema no permite esa lectura síncrona, muestra una indicación para introducir todos los valores y terminar con `Ctrl+Z` + Enter (Windows) o `Ctrl+D` (Unix);
+   * si no hay entrada disponible, el runtime lanza un error claro.
 4. Ejecuta el cuerpo con:
 
    ```ts
@@ -123,7 +125,7 @@ Sin `--out`, la CLI:
 
    El runtime se pasa como **parámetro**, no se publica en `globalThis`: cada ejecución queda aislada y no hay contaminación global. El cuerpo usa los mismos helpers que el archivo `.js` autónomo.
 
-Los `print` del programa aparecen por consola mediante `CompilerRuntime.print`; un error en tiempo de ejecución se reporta como `❌ Error de ejecución: ...` con código 1.
+Los `print` del programa aparecen por consola mediante `CompilerRuntime.print`; un error en tiempo de ejecución se reporta como `❌ Error de ejecución: ...` con código 1. El programa objeto escrito en `out/` también funciona de forma autónoma: `node out/Programa.js` acepta entrada interactiva o por tubería.
 
 ### 7. Códigos de salida
 
@@ -135,7 +137,8 @@ Los `print` del programa aparecen por consola mediante `CompilerRuntime.print`; 
 
 ### 8. Verificación realizada
 
-* `npm run compile -- examples/factorial.tys` → imprime el objeto, ejecuta y muestra `120`.
+* `npm run compile -- examples/factorial.tys` → escribe el objeto, ejecuta y muestra únicamente `120`.
+* `npm run --silent compile -- examples/factorial.tys` → lo mismo, sin el banner de `npm`.
 * `--ir` muestra los 13 cuádruples del `for` y `--opt` indica que no hubo cambios (el factorial ya es compacto).
 * `--out` escribe `out/Factorial.js` y `out/Factorial.ir.txt` sin ejecutar.
 * Un programa con variable no declarada y `if` no booleano termina con código 1 y ambos diagnósticos semánticos, sin generar `out/`.

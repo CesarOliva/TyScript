@@ -12,6 +12,11 @@ export const RUNTIME_SOURCE = `const CompilerRuntime = (() => {
   let input = [];
   let inputIndex = 0;
   let silent = false;
+  let reader = null;
+  const stdinBytes = [];
+  let stdinEnded = false;
+  let stdinFailed = false;
+  let bulkPromptShown = false;
 
   const parseInput = (value) => {
     if (typeof value !== "string") return value;
@@ -20,6 +25,87 @@ export const RUNTIME_SOURCE = `const CompilerRuntime = (() => {
     if (trimmed === "false") return false;
     if (trimmed !== "" && !Number.isNaN(Number(trimmed))) return Number(trimmed);
     return value;
+  };
+
+  const shiftLine = () => {
+    const newline = stdinBytes.indexOf(10);
+    if (newline < 0) return undefined;
+
+    const lineBytes = stdinBytes.splice(0, newline + 1);
+    lineBytes.pop();
+    if (lineBytes.length > 0 && lineBytes[lineBytes.length - 1] === 13) lineBytes.pop();
+    return Buffer.from(lineBytes).toString("utf8");
+  };
+
+  const takeRemainder = () => {
+    if (stdinBytes.length === 0) return undefined;
+
+    const rest = stdinBytes.splice(0, stdinBytes.length);
+    if (rest.length > 0 && rest[rest.length - 1] === 13) rest.pop();
+    return Buffer.from(rest).toString("utf8");
+  };
+
+  const readAllStdin = (fs) => {
+    try {
+      const rest = fs.readFileSync(0);
+      for (let i = 0; i < rest.length; i++) stdinBytes.push(rest[i]);
+    } catch (error) {
+      stdinFailed = true;
+    }
+
+    stdinEnded = true;
+  };
+
+  const readStdinLine = () => {
+    if (stdinFailed) return undefined;
+    if (typeof process === "undefined" || !process.stdin) return undefined;
+    if (typeof require !== "function") return undefined;
+
+    let fs;
+
+    try {
+      fs = require("fs");
+    } catch (error) {
+      stdinFailed = true;
+      return undefined;
+    }
+
+    if (!process.stdin.isTTY) {
+      if (!stdinEnded) readAllStdin(fs);
+      return shiftLine() ?? takeRemainder();
+    }
+
+    const chunk = Buffer.alloc(256);
+
+    while (true) {
+      const line = shiftLine();
+      if (line !== undefined) return line;
+
+      if (stdinEnded) return takeRemainder();
+
+      try {
+        const bytes = fs.readSync(0, chunk, 0, chunk.length, null);
+
+        if (bytes === 0) {
+          stdinEnded = true;
+          continue;
+        }
+
+        for (let i = 0; i < bytes; i++) stdinBytes.push(chunk[i]);
+      } catch (error) {
+        if (bulkPromptShown || stdinFailed) {
+          stdinFailed = true;
+          return undefined;
+        }
+
+        bulkPromptShown = true;
+        if (typeof console !== "undefined") {
+          console.log("Introduce los valores para read() (uno por línea). Termina con Ctrl+Z y Enter (Windows) o Ctrl+D (Unix):");
+        }
+
+        readAllStdin(fs);
+      }
+    }
   };
 
   class TyStack {
@@ -107,14 +193,26 @@ export const RUNTIME_SOURCE = `const CompilerRuntime = (() => {
     },
     read() {
       if (inputIndex < input.length) return parseInput(input[inputIndex++]);
+
+      if (reader) {
+        const custom = reader();
+        if (custom !== undefined) return parseInput(custom);
+      }
+
+      const line = readStdinLine();
+      if (line !== undefined) return parseInput(line);
+
       throw new Error(
         "CompilerRuntime: no hay entrada disponible para read(). " +
-        "Usa CompilerRuntime.setInput([...]) antes de ejecutar el programa."
+        "Escribe el valor y pulsa Enter, o usa CompilerRuntime.setInput([...]) antes de ejecutar el programa."
       );
     },
     setInput(values) {
       input = (values || []).slice();
       inputIndex = 0;
+    },
+    setReader(fn) {
+      reader = typeof fn === "function" ? fn : null;
     },
     setSilent(value) {
       silent = Boolean(value);
@@ -154,6 +252,7 @@ export interface CompilerRuntimeApi {
     print(value: unknown): void;
     read(): unknown;
     setInput(values: ReadonlyArray<unknown>): void;
+    setReader(fn: (() => string | undefined) | null): void;
     setSilent(value: boolean): void;
     reset(): void;
 }

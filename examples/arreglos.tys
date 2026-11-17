@@ -1,0 +1,16 @@
+program Arreglos {
+    int[] numeros = [4, 8, 15, 16, 23, 42];
+    int suma = 0;
+    int i = 0;
+
+    while (i < 6) {
+        suma = suma + numeros[i];
+        numeros[i] = numeros[i] + 1;
+        i = i + 1;
+    }
+
+    print("Suma:");
+    print(suma);
+    print("Primer elemento:");
+    print(numeros[0]);
+}
