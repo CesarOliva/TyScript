@@ -117,9 +117,15 @@ export function findBrokenJumps(quads: Quad[]): BrokenJump[] {
     const broken: BrokenJump[] = [];
 
     quads.forEach((quad, index) => {
-        if (CONTROL_OPS.includes(quad.op) && quad.op !== "label" && quad.arg1 && quad.arg1.kind === "label") {
+        if (quad.op === "goto" && quad.arg1 && quad.arg1.kind === "label") {
             if (!label.has(quad.arg1.name)) {
                 broken.push({ index, op: quad.op, target: quad.arg1.name });
+            }
+        }
+
+        if (quad.op === "if_false" && quad.arg2 && quad.arg2.kind === "label") {
+            if (!label.has(quad.arg2.name)) {
+                broken.push({ index, op: quad.op, target: quad.arg2.name });
             }
         }
     })

@@ -4,6 +4,7 @@ import { SemanticAnalyzer } from './semanticAnalyzer';
 import { IntermediateGenerator } from './intermediateGenerator';
 import { findBrokenJumps } from './ir';
 import { formatQuads, quadTable } from './irFormatter';
+import { optimize } from './optimizer';
 
 function runSemanticTest(testName: string, source: string) {
   console.log(`==================================================`);
@@ -60,6 +61,74 @@ function runIntermediateTest(testName: string, source: string) {
     console.log("❌ SALTOS ROTOS (etiquetas inexistentes):", broken);
   } else {
     console.log("✅ IR VÁLIDO: todas las etiquetas referenciadas existen.");
+  }
+  console.log("\n");
+}
+
+// ---------------------------------------------------------------------------
+// FASE 2: Optimizador (bloques básicos + pases locales)
+// ---------------------------------------------------------------------------
+
+function runOptimizerTest(testName: string, source: string, expectReductionHint?: string) {
+  console.log(`==================================================`);
+  console.log(` OPT TEST: ${testName}`);
+  console.log(`==================================================`);
+
+  const lexer = new Lexer(source);
+  const tokens = lexer.scanTokens();
+  const parser = new Parser(tokens);
+  const ast = parser.parse();
+  const analyzer = new SemanticAnalyzer();
+  const isValid = analyzer.analyze(ast);
+
+  if (!isValid) {
+    console.log("❌ ANÁLISIS FALLÓ: el optimizador no se ejecuta.");
+    console.table(analyzer.errors);
+    console.log("\n");
+    return;
+  }
+
+  const original = new IntermediateGenerator().generate(ast);
+  const result = optimize(original);
+  const broken = findBrokenJumps(result.optimizedQuads);
+
+  console.log(`Cuádruples: ${original.length} → ${result.optimizedQuads.length} (eliminados: ${result.removedCount})`);
+
+  console.log("Bloques básicos:");
+  console.table(result.blocks.map((b) => ({
+    bloque: b.id,
+    rango: `${b.start}..${b.end - 1}`,
+    predecesores: `[${b.predecessors.join(", ")}]`,
+    sucesores: `[${b.successors.join(", ")}]`,
+  })));
+
+  console.log("Log de pases:");
+  const byPass = new Map<string, number>();
+  for (const entry of result.passesLog) {
+    if (entry.changed > 0) byPass.set(entry.pass, (byPass.get(entry.pass) ?? 0) + entry.changed);
+  }
+  if (byPass.size > 0) {
+    console.table([...byPass].map(([pass, total]) => ({ pase: pass, cambios: total })));
+  } else {
+    console.log("(ningún pase aplicó cambios)");
+  }
+
+  console.log("Cuádruples optimizados:");
+  console.log(formatQuads(result.optimizedQuads));
+  console.table(quadTable(result.optimizedQuads));
+
+  const validJumps = broken.length === 0;
+  const noGrowth = result.optimizedQuads.length <= original.length;
+  const reduced = result.optimizedQuads.length < original.length;
+
+  if (!validJumps) {
+    console.log("❌ SALTOS ROTOS en el IR optimizado:", broken);
+  } else if (!noGrowth) {
+    console.log("❌ El optimizador AUMENTÓ el número de cuádruples.");
+  } else if (expectReductionHint && !reduced) {
+    console.log(`❌ Se esperaba reducción (${expectReductionHint}) pero el tamaño no cambió.`);
+  } else {
+    console.log("✅ OPTIMIZACIÓN OK: saltos válidos y tamaño no crece.");
   }
   console.log("\n");
 }
@@ -250,3 +319,77 @@ runIntermediateTest("IR stack y queue", estructurasCode);
 runIntermediateTest("IR arreglos e índices", arreglosCode);
 runIntermediateTest("IR operadores lógicos y unarios", logicocode);
 runIntermediateTest("IR read", readCode);
+
+// -----------------------------------------------------------------------------
+// FASE 2: Programas de prueba para el optimizador
+// -----------------------------------------------------------------------------
+
+const plegadoCode = `
+program Plegado {
+  int x = 2 + 3 * 4;
+  print(x);
+}
+`;
+
+const algebraicoCode = `
+program Algebraico {
+  int x = 7;
+  int y = x + 0;
+  int z = 1 * x;
+  int w = 0 * x;
+  bool b = true && false;
+  bool c = true || b;
+  print(y);
+  print(z);
+  print(w);
+  print(b);
+  print(c);
+}
+`;
+
+const enCadenaCode = `
+program EnCadena {
+  const int K = 10;
+  int a = K;
+  int b = a;
+  int c = b + 0;
+  print(c);
+}
+`;
+
+const subexpresionesCode = `
+program Subexpresiones {
+  int a = 3;
+  int b = 4;
+  int r1 = a + b;
+  int r2 = a + b;
+  int r3 = b + a;
+  int r4 = a * b;
+  print(r1 + r2 + r3 + r4);
+}
+`;
+
+const codigoMuertoCode = `
+program CodigoMuerto {
+  int x = 5;
+  int unused = x * 2 + 1;
+  print(x);
+}
+`;
+
+const bucleOptimizadoCode = `
+program Bucle {
+  int suma = 0;
+  for (int i = 0; i < 10; i = i + 1) {
+    suma = suma + i * 1;
+  }
+  print(suma);
+}
+`;
+
+runOptimizerTest("OPT plegado de constantes (x = 2 + 3*4)", plegadoCode, "x debe quedar en una sola asignación");
+runOptimizerTest("OPT simplificación algebraica", algebraicoCode, "x+0, x*1, x*0 y bools constantes");
+runOptimizerTest("OPT propagación de constantes/copias", enCadenaCode, "la constante debe propagarse");
+runOptimizerTest("OPT CSE local (a+b repetido)", subexpresionesCode, "subexpresiones repetidas");
+runOptimizerTest("OPT código muerto", codigoMuertoCode, "asignaciones a temporales no usados");
+runOptimizerTest("OPT bucle con for", bucleOptimizadoCode, "i*1 dentro del bucle");
