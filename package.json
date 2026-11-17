@@ -4,7 +4,8 @@
   "description": "Compilador TyScript: Fase léxica, sintáctica y semántica",
   "main": "src/tests.ts",
   "scripts": {
-    "test": "ts-node src/tests.ts"
+    "test": "ts-node src/tests.ts",
+    "compile": "ts-node src/compile.ts"
   },
   "keywords": [],
   "author": "",

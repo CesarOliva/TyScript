@@ -5,6 +5,8 @@ import { IntermediateGenerator } from './intermediateGenerator';
 import { findBrokenJumps } from './ir';
 import { formatQuads, quadTable } from './irFormatter';
 import { optimize } from './optimizer';
+import { createCompilerRuntime, generateJavaScript } from './javascriptGenerator';
+import type { Quad } from './ir';
 
 function runSemanticTest(testName: string, source: string) {
   console.log(`==================================================`);
@@ -393,3 +395,79 @@ runOptimizerTest("OPT propagación de constantes/copias", enCadenaCode, "la cons
 runOptimizerTest("OPT CSE local (a+b repetido)", subexpresionesCode, "subexpresiones repetidas");
 runOptimizerTest("OPT código muerto", codigoMuertoCode, "asignaciones a temporales no usados");
 runOptimizerTest("OPT bucle con for", bucleOptimizadoCode, "i*1 dentro del bucle");
+
+// -----------------------------------------------------------------------------
+// FASE 3: Programas de prueba para el generador de código JavaScript
+// -----------------------------------------------------------------------------
+
+function executeQuads(quads: Quad[], input: unknown[] = []): unknown[] {
+  const generated = generateJavaScript(quads);
+  const runtime = createCompilerRuntime();
+
+  runtime.setSilent(true);
+  runtime.setInput(input);
+  new Function("CompilerRuntime", generated.body)(runtime);
+
+  return [...runtime.output];
+}
+
+function runJavaScriptTest(testName: string, source: string, expected: unknown[], input: unknown[] = []) {
+  console.log(`==================================================`);
+  console.log(` JS TEST: ${testName}`);
+  console.log(`==================================================`);
+
+  const lexer = new Lexer(source);
+  const tokens = lexer.scanTokens();
+  const parser = new Parser(tokens);
+  const ast = parser.parse();
+  const analyzer = new SemanticAnalyzer();
+  const isValid = analyzer.analyze(ast);
+
+  if (!isValid) {
+    console.log("❌ ANÁLISIS FALLÓ: no se genera código JavaScript.");
+    console.table(analyzer.errors);
+    console.log("\n");
+    return;
+  }
+
+  const original = new IntermediateGenerator().generate(ast);
+  const result = optimize(original);
+  const expectedText = JSON.stringify(expected);
+
+  try {
+    const optimizedOutput = executeQuads(result.optimizedQuads, input);
+    const optimizedText = JSON.stringify(optimizedOutput);
+    const originalOutput = executeQuads(original, input);
+    const originalText = JSON.stringify(originalOutput);
+    const generated = generateJavaScript(result.optimizedQuads);
+
+    console.log(`Cuádruples: ${original.length} → ${result.optimizedQuads.length}`);
+    console.log(`Flujo generado: ${generated.structured ? "estructurado" : "máquina de estados"}`);
+    console.log(`print(): ${optimizedText}`);
+
+    const equivalenceOk = originalText === optimizedText;
+    const expectationOk = optimizedText === expectedText;
+
+    if (!expectationOk) {
+      console.log(`❌ Salida inesperada. Esperado: ${expectedText}`);
+    } else if (!equivalenceOk) {
+      console.log(`❌ El IR optimizado no es equivalente al original (${originalText}).`);
+    } else {
+      console.log("✅ JS OK: salida esperada y equivalente antes/después de optimizar.");
+    }
+  } catch (error) {
+    console.log(`❌ ERROR ejecutando el objeto JavaScript: ${(error as Error).message}`);
+  }
+
+  console.log("\n");
+}
+
+runJavaScriptTest("JS Factorial (for)", factorialCode, [120]);
+runJavaScriptTest("JS Fibonacci (while)", fibonacciCode, [21]);
+runJavaScriptTest("JS CuentaRegresiva (do-while)", doWhileCode, [3, 2, 1, "Fin"]);
+runJavaScriptTest("JS if/else anidados", ifElseCode, ["Par mayor a 5"]);
+runJavaScriptTest("JS stack y queue", estructurasCode, [2, 2, "a", "a", 1, false]);
+runJavaScriptTest("JS arreglos e índices", arreglosCode, [100, 30, 20]);
+runJavaScriptTest("JS operadores lógicos y unarios", logicocode, ["OK and", -4]);
+runJavaScriptTest("JS read con entrada simulada", readCode, ["Mayor de edad"], [20]);
+runJavaScriptTest("JS plegado de constantes", plegadoCode, [14]);
