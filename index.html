@@ -3,69 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0e1116" />
-    <meta name="description" content="Explora cómo se crea un lenguaje de programación: prueba TyScript y observa el análisis léxico, sintáctico y semántico, la optimización y la generación de JavaScript." />
-    <meta name="robots" content="index,follow,max-image-preview:large" />
-    <link rel="canonical" href="https://cesaroliva.github.io/TyScript/" />
-    <meta property="og:type" content="website" />
-    <meta property="og:locale" content="es_MX" />
-    <meta property="og:site_name" content="TyScript" />
-    <meta property="og:title" content="TyScript: aprende cómo funciona un compilador" />
-    <meta property="og:description" content="Un proyecto educativo para explorar cómo se diseña un lenguaje y cómo un compilador transforma su código en JavaScript." />
-    <meta property="og:url" content="https://cesaroliva.github.io/TyScript/" />
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="TyScript: aprende cómo funciona un compilador" />
-    <meta name="twitter:description" content="Explora las etapas de un compilador con un lenguaje pequeño y un playground interactivo." />
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": ["WebApplication", "LearningResource"],
-        "name": "TyScript",
-        "url": "https://cesaroliva.github.io/TyScript/",
-        "inLanguage": "es-MX",
-        "description": "Proyecto educativo para entender cómo se diseña un lenguaje de programación y cómo funciona un compilador, desde el análisis hasta la generación de JavaScript.",
-        "applicationCategory": "EducationalApplication",
-        "educationalUse": "instruction",
-        "learningResourceType": "interactive tutorial",
-        "isAccessibleForFree": true
-      }
-    </script>
-    <title>TyScript: aprende cómo funciona un compilador</title>
-    <script type="module" crossorigin src="/TyScript/assets/index-DdkB8cOA.js"></script>
-    <link rel="stylesheet" crossorigin href="/TyScript/assets/index-B5ugW9Gw.css">
+    <title>TyScript — Playground Fase Análisis</title>
+    <script type="module" crossorigin src="/TyScript/assets/index-DXx9S1o7.js"></script>
+    <link rel="stylesheet" crossorigin href="/TyScript/assets/index-D3NECqEi.css">
   </head>
   <body>
-    <main class="intro" aria-labelledby="intro-title">
-      <div class="intro-copy">
-        <p class="intro-kicker">Un laboratorio para aprender compiladores</p>
-        <h1 id="intro-title">¿Qué ocurre dentro de un compilador?</h1>
-        <p class="intro-lead">TyScript es un proyecto educativo para entender cómo se crea un lenguaje de programación y cómo un compilador transforma lo que escribes, paso a paso.</p>
-        <a class="intro-link" href="#root">Explorar el playground <span aria-hidden="true">↓</span></a>
-      </div>
-      <section class="language-intro" aria-labelledby="language-title">
-        <div>
-          <h2 id="language-title">Un lenguaje pequeño, un compilador completo</h2>
-          <p>TyScript tiene tipos como <code>int</code>, <code>float</code>, <code>bool</code> y <code>string</code>, además de arreglos, pilas y colas. Permite declarar variables, usar condiciones y ciclos, y escribir instrucciones como <code>print</code> y <code>read</code>.</p>
-          <p>Su compilador analiza el programa, comprueba que las operaciones tengan sentido, optimiza una representación intermedia y genera JavaScript. En el playground puedes editar ejemplos, ejecutarlos y seguir las fases léxica, sintáctica y semántica.</p>
-        </div>
-        <pre aria-label="Ejemplo de programa TyScript"><code>program Hola {
-  string nombre = "Ada";
-  print("Hola " + nombre);
-}</code></pre>
-      </section>
-      <section class="pipeline" aria-labelledby="pipeline-title">
-        <h2 id="pipeline-title">Del código fuente a JavaScript</h2>
-        <ol class="pipeline-steps">
-          <li><strong>1. Léxico</strong><span>Convierte el texto en tokens: nombres, palabras clave y símbolos.</span></li>
-          <li><strong>2. Sintaxis</strong><span>Comprueba la estructura y construye el árbol del programa.</span></li>
-          <li><strong>3. Semántica</strong><span>Verifica tipos, declaraciones y ámbitos de las variables.</span></li>
-          <li><strong>4. Código intermedio</strong><span>Expresa las operaciones como instrucciones de tres direcciones.</span></li>
-          <li><strong>5. Optimización</strong><span>Aplica mejoras que conservan el resultado del programa.</span></li>
-          <li><strong>6. JavaScript</strong><span>Genera el código final para ejecutar el programa.</span></li>
-        </ol>
-      </section>
-      <p class="intro-note">Escribe y ejecuta programas en TyScript, consulta los ejemplos y observa las primeras fases en modo paso a paso. Todo ocurre en tu navegador.</p>
-    </main>
     <div id="root"></div>
   </body>
 </html>
