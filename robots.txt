@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://cesaroliva.github.io/TyScript/sitemap.xml
